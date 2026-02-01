@@ -24,10 +24,8 @@ if readme_path.exists():
 
 # Dependencies
 install_requires = [
-    "torch>=2.0.0",
     "numpy>=1.20.0",
     "protobuf>=3.20.0",
-    "tqdm>=4.60.0",
 ]
 
 # Optional dependencies
@@ -47,9 +45,9 @@ extras_require = {
 setup(
     name="sintellix",
     version=version.get("__version__", "0.1.0"),
-    author="Sintellix Team",
-    author_email="contact@sintellix.ai",
-    description="Neural Network Framework with HOT Architecture",
+    author="randomdevel0per, Anthropic Claude Sonnet 4.5",
+    author_email="noreply@anthropic.com",
+    description="High-Performance Neural Network Framework with 3D Grid Architecture",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/sintellix/sintellix",
