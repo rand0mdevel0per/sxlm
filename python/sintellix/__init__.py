@@ -26,6 +26,17 @@ from .models import (
     download_model,
 )
 
+# Import channel operations (critical for saltts project)
+from .channel_ops import (
+    SubchannelExtractor,
+    ChannelWrapper,
+    AuxiliaryChannelInserter,
+    ChannelType,
+    extract_and_wrap_text,
+    extract_and_wrap_audio,
+    extract_wrap_and_insert,
+)
+
 __all__ = [
     # Core
     "NeuronModel",
@@ -37,4 +48,12 @@ __all__ = [
     # Models
     "ModelManager",
     "download_model",
+    # Channel Operations (saltts integration)
+    "SubchannelExtractor",
+    "ChannelWrapper",
+    "AuxiliaryChannelInserter",
+    "ChannelType",
+    "extract_and_wrap_text",
+    "extract_and_wrap_audio",
+    "extract_wrap_and_insert",
 ]
