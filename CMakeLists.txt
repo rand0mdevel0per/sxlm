@@ -30,7 +30,6 @@ if(Protobuf_FOUND)
     set(PROTO_FILES
         proto/neuron_config.proto
         proto/model_state.proto
-        proto/cic_data.proto
         proto/embedding_config.proto
     )
     protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})

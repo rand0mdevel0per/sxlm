@@ -8,6 +8,9 @@
 
 namespace sintellix {
 
+// Import CICData from nmdb namespace
+using nmdb::CICData;
+
 /**
  * @brief CIC Channel Extractor
  *

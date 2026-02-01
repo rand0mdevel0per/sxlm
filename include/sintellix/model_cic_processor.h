@@ -9,6 +9,9 @@
 
 namespace sintellix {
 
+// Import CICData from nmdb namespace
+using nmdb::CICData;
+
 /**
  * @brief Model CIC Input Processor
  *
