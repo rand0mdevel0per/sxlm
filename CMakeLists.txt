@@ -30,6 +30,8 @@ if(Protobuf_FOUND)
     set(PROTO_FILES
         proto/neuron_config.proto
         proto/model_state.proto
+        proto/cic_data.proto
+        proto/embedding_config.proto
     )
     protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
     message(STATUS "Protobuf found, enabling serialization support")
@@ -61,6 +63,12 @@ set(SINTELLIX_SOURCES
     src/codec/vqgan.cu
     src/codec/encoder.cu
     src/codec/decoder.cu
+
+    # CIC channel operations
+    src/cic_channel_ops.cpp
+    src/model_cic_processor.cpp
+    src/embedding_config_loader.cpp
+
     ${PROTO_SRCS}
 )
 
@@ -73,6 +81,9 @@ set(SINTELLIX_HEADERS
     include/sintellix/codec/encoder.hpp
     include/sintellix/codec/decoder.hpp
     include/sintellix/storage/tiered_storage.cuh
+    include/sintellix/cic_channel_ops.h
+    include/sintellix/model_cic_processor.h
+    include/sintellix/embedding_config_loader.h
 )
 
 # Main library

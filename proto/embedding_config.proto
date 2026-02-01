@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package sintellix;
+
+// Configurable Embedding Models Configuration
+message EmbeddingConfig {
+  // Text embedding configuration
+  message TextEmbedding {
+    enum ModelType {
+      E5_SMALL = 0;                     // E5-small (384 dim)
+      E5_BASE = 1;                      // E5-base (768 dim)
+      E5_LARGE = 2;                     // E5-large (1024 dim)
+      CUSTOM = 3;                       // Custom text embedding model
+    }
+
+    ModelType model_type = 1;
+    string model_path = 2;              // Path to ONNX model
+    int32 embedding_dim = 3;            // Embedding dimension
+    string tokenizer_path = 4;          // Path to tokenizer files
+    int32 max_sequence_length = 5;      // Maximum sequence length
+  }
+
+  // Image embedding configuration
+  message ImageEmbedding {
+    enum ModelType {
+      CLIP_VIT_B_32 = 0;                // CLIP ViT-B/32 (512 dim)
+      CLIP_VIT_L_14 = 1;                // CLIP ViT-L/14 (768 dim)
+      CLIP_VIT_L_14_336 = 2;            // CLIP ViT-L/14@336px (768 dim)
+      CUSTOM = 3;                       // Custom image embedding model
+    }
+
+    ModelType model_type = 1;
+    string model_path = 2;              // Path to ONNX model
+    int32 embedding_dim = 3;            // Embedding dimension
+    int32 image_size = 4;               // Input image size (e.g., 224, 336)
+  }
+
+  // Audio embedding configuration
+  message AudioEmbedding {
+    enum ModelType {
+      WAV2VEC2_BASE = 0;                // Wav2Vec2-base (768 dim)
+      WAV2VEC2_LARGE = 1;               // Wav2Vec2-large (1024 dim)
+      CUSTOM = 2;                       // Custom audio embedding model
+    }
+
+    ModelType model_type = 1;
+    string model_path = 2;              // Path to ONNX model
+    int32 embedding_dim = 3;            // Embedding dimension
+    int32 sample_rate = 4;              // Audio sample rate (e.g., 16000)
+  }
+
+  // Embedding configurations
+  TextEmbedding text_embedding = 1;
+  ImageEmbedding image_embedding = 2;
+  AudioEmbedding audio_embedding = 3;
+}
