@@ -6,6 +6,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
+# Fetch nmdb as external dependency
+include(FetchContent)
+FetchContent_Declare(
+    nmdb
+    GIT_REPOSITORY https://github.com/rand0mdevel0per/nmdb.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(nmdb)
+
+# Add nmdb include directories
+include_directories(${nmdb_SOURCE_DIR}/include)
+include_directories(${nmdb_BINARY_DIR})
+
 # Options
 option(USE_HIP "Use HIP instead of CUDA" OFF)
 option(BUILD_PYTHON "Build Python bindings" OFF)
