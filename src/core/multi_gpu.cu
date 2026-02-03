@@ -84,23 +84,49 @@ void MultiGPUManager::free_unified(void* ptr) {
 }
 
 void MultiGPUManager::set_preferred_location(void* ptr, int device_id, size_t size) {
-    // Note: cudaMemAdvise API signature changed in CUDA 13.0
-    // Unified memory will automatically migrate data as needed
-    // This is an optional optimization that can be enabled later
-    // TODO: Update to use CUDA 13.0+ memory location API
-    (void)ptr;
-    (void)device_id;
-    (void)size;
+#if CUDART_VERSION >= 13000
+    // CUDA 13.0+ uses cudaMemLocation instead of device ID
+    cudaMemLocation location = {};
+    location.type = cudaMemLocationTypeDevice;
+    location.id = device_id;
+
+    cudaError_t err = cudaMemAdvise(ptr, size, cudaMemAdviseSetPreferredLocation, location);
+    if (err != cudaSuccess) {
+        std::cerr << "Warning: cudaMemAdvise failed: "
+                  << cudaGetErrorString(err) << std::endl;
+    }
+#else
+    // CUDA 12.x and earlier use device ID directly
+    cudaError_t err = cudaMemAdvise(ptr, size, cudaMemAdviseSetPreferredLocation, device_id);
+    if (err != cudaSuccess) {
+        std::cerr << "Warning: cudaMemAdvise failed: "
+                  << cudaGetErrorString(err) << std::endl;
+    }
+#endif
 }
 
 void MultiGPUManager::prefetch_to_device(void* ptr, size_t size, int device_id) {
-    // Note: cudaMemPrefetchAsync API signature changed in CUDA 13.0
-    // Unified memory will automatically migrate data on-demand
-    // This is an optional optimization that can be enabled later
-    // TODO: Update to use CUDA 13.0+ memory location API
-    (void)ptr;
-    (void)size;
-    (void)device_id;
+#if CUDART_VERSION >= 13000
+    // CUDA 13.0+ uses cudaMemLocation instead of device ID
+    cudaMemLocation location = {};
+    location.type = cudaMemLocationTypeDevice;
+    location.id = device_id;
+
+    cudaStream_t stream = get_stream(device_id);
+    cudaError_t err = cudaMemPrefetchAsync(ptr, size, location, stream);
+    if (err != cudaSuccess) {
+        std::cerr << "Warning: cudaMemPrefetchAsync failed: "
+                  << cudaGetErrorString(err) << std::endl;
+    }
+#else
+    // CUDA 12.x and earlier use device ID directly
+    cudaStream_t stream = get_stream(device_id);
+    cudaError_t err = cudaMemPrefetchAsync(ptr, size, device_id, stream);
+    if (err != cudaSuccess) {
+        std::cerr << "Warning: cudaMemPrefetchAsync failed: "
+                  << cudaGetErrorString(err) << std::endl;
+    }
+#endif
 }
 
 bool MultiGPUManager::enable_peer_access() {
