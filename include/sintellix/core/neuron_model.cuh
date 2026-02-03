@@ -4,9 +4,12 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <thread>
+#include <atomic>
 #include "sintellix/core/neuron.cuh"
 #include "sintellix/core/config.hpp"
 #include "sintellix/core/multi_gpu.cuh"
+#include "sintellix/core/streaming_buffer.cuh"
 #include "sintellix/storage/tiered_storage.cuh"
 
 namespace sintellix {
@@ -134,6 +137,56 @@ public:
      */
     int get_gpu_count() const;
 
+    // ========================================================================
+    // Streaming Processing Support
+    // ========================================================================
+
+    /**
+     * Enable streaming mode for processing data in chunks
+     * @param chunk_size Size of each chunk (default: 4096)
+     * @param max_chunks Maximum number of chunks in buffer (default: 16)
+     * @return true if successful
+     */
+    bool enable_streaming(size_t chunk_size = 4096, size_t max_chunks = 16);
+
+    /**
+     * Disable streaming mode
+     * @return true if successful
+     */
+    bool disable_streaming();
+
+    /**
+     * Check if streaming mode is enabled
+     */
+    bool is_streaming_enabled() const { return streaming_enabled_; }
+
+    /**
+     * Push input chunk for streaming processing
+     * @param data Input data pointer
+     * @param size Size of input data
+     * @param is_last Whether this is the last chunk
+     * @return true if successful
+     */
+    bool push_input_chunk(const double* data, size_t size, bool is_last = false);
+
+    /**
+     * Try to get output chunk (non-blocking)
+     * @param data Output data buffer
+     * @param size Size of output data (output parameter)
+     * @param is_last Whether this is the last chunk (output parameter)
+     * @return true if output is available
+     */
+    bool try_get_output_chunk(double* data, size_t& size, bool& is_last);
+
+    /**
+     * Wait for output chunk (blocking)
+     * @param data Output data buffer
+     * @param size Size of output data (output parameter)
+     * @param is_last Whether this is the last chunk (output parameter)
+     * @return true if successful
+     */
+    bool get_output_chunk(double* data, size_t& size, bool& is_last);
+
 private:
     NeuronConfig config_;
     std::vector<std::unique_ptr<Neuron>> neurons_;
@@ -151,6 +204,19 @@ private:
     std::unique_ptr<MultiGPUManager> multi_gpu_manager_;
     bool multi_gpu_enabled_;
     std::vector<std::pair<int, int>> neuron_distribution_;  // (start_idx, count) per device
+
+    // Streaming processing support
+    bool streaming_enabled_;
+    std::unique_ptr<StreamingBuffer> input_buffer_;
+    std::unique_ptr<StreamingBuffer> output_buffer_;
+    std::unique_ptr<GPUStreamingBuffer> gpu_buffer_;
+    std::thread streaming_thread_;
+    std::atomic<bool> streaming_active_;
+    size_t streaming_chunk_size_;
+    size_t streaming_chunk_counter_;
+
+    // Streaming processing worker
+    void streaming_worker();
 
     // Helper methods
     int get_neuron_index(int x, int y, int z) const {

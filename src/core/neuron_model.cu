@@ -101,6 +101,10 @@ NeuronModel::NeuronModel(const NeuronConfig& config)
     , total_neurons_(grid_x_ * grid_y_ * grid_z_)
     , dim_(config.dim())
     , multi_gpu_enabled_(false)
+    , streaming_enabled_(false)
+    , streaming_active_(false)
+    , streaming_chunk_size_(0)
+    , streaming_chunk_counter_(0)
 {
     // Create tiered storage manager
     storage_manager_ = std::make_unique<TieredStorageManager>(config);
@@ -377,6 +381,170 @@ int NeuronModel::get_gpu_count() const {
         return multi_gpu_manager_->get_device_count();
     }
     return 1;  // Single GPU mode
+}
+
+// ============================================================================
+// Streaming Processing Implementation
+// ============================================================================
+
+bool NeuronModel::enable_streaming(size_t chunk_size, size_t max_chunks) {
+    if (streaming_enabled_) {
+        return false;  // Already enabled
+    }
+
+    try {
+        streaming_chunk_size_ = chunk_size;
+        streaming_chunk_counter_ = 0;
+
+        // Create buffers
+        input_buffer_ = std::make_unique<StreamingBuffer>(max_chunks);
+        output_buffer_ = std::make_unique<StreamingBuffer>(max_chunks);
+        gpu_buffer_ = std::make_unique<GPUStreamingBuffer>(chunk_size, 4);
+
+        // Allocate GPU buffers
+        if (!gpu_buffer_->allocate()) {
+            return false;
+        }
+
+        // Start streaming worker thread
+        streaming_active_.store(true);
+        streaming_thread_ = std::thread(&NeuronModel::streaming_worker, this);
+
+        streaming_enabled_ = true;
+        std::cout << "Streaming mode enabled (chunk_size=" << chunk_size
+                  << ", max_chunks=" << max_chunks << ")" << std::endl;
+        return true;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to enable streaming: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+bool NeuronModel::disable_streaming() {
+    if (!streaming_enabled_) {
+        return false;
+    }
+
+    // Signal end of stream
+    input_buffer_->signal_end();
+    streaming_active_.store(false);
+
+    // Wait for worker thread to finish
+    if (streaming_thread_.joinable()) {
+        streaming_thread_.join();
+    }
+
+    // Clear buffers
+    input_buffer_.reset();
+    output_buffer_.reset();
+    gpu_buffer_.reset();
+
+    streaming_enabled_ = false;
+    std::cout << "Streaming mode disabled" << std::endl;
+    return true;
+}
+
+bool NeuronModel::push_input_chunk(const double* data, size_t size, bool is_last) {
+    if (!streaming_enabled_) {
+        return false;
+    }
+
+    DataChunk chunk(data, size, streaming_chunk_counter_++, is_last);
+    return input_buffer_->push(chunk);
+}
+
+bool NeuronModel::try_get_output_chunk(double* data, size_t& size, bool& is_last) {
+    if (!streaming_enabled_) {
+        return false;
+    }
+
+    DataChunk chunk;
+    if (output_buffer_->try_pop(chunk)) {
+        size = std::min(chunk.total_size, streaming_chunk_size_);
+        std::copy(chunk.data.begin(), chunk.data.begin() + size, data);
+        is_last = chunk.is_last;
+        return true;
+    }
+
+    return false;
+}
+
+bool NeuronModel::get_output_chunk(double* data, size_t& size, bool& is_last) {
+    if (!streaming_enabled_) {
+        return false;
+    }
+
+    DataChunk chunk;
+    if (output_buffer_->pop(chunk)) {
+        size = std::min(chunk.total_size, streaming_chunk_size_);
+        std::copy(chunk.data.begin(), chunk.data.begin() + size, data);
+        is_last = chunk.is_last;
+        return true;
+    }
+
+    return false;
+}
+
+void NeuronModel::streaming_worker() {
+    while (streaming_active_.load()) {
+        DataChunk input_chunk;
+
+        // Try to get input chunk
+        if (!input_buffer_->pop(input_chunk)) {
+            if (input_buffer_->is_ended()) {
+                break;
+            }
+            continue;
+        }
+
+        // Get GPU buffer
+        double* gpu_input = gpu_buffer_->get_next_buffer(streams_[0]);
+        if (!gpu_input) {
+            std::cerr << "Failed to get GPU buffer" << std::endl;
+            continue;
+        }
+
+        // Allocate output buffer
+        double* gpu_output = nullptr;
+        cudaMalloc(&gpu_output, input_chunk.total_size * sizeof(double));
+
+        // Copy input to GPU
+        if (!gpu_buffer_->copy_to_gpu(input_chunk, gpu_input, streams_[0])) {
+            std::cerr << "Failed to copy input to GPU" << std::endl;
+            gpu_buffer_->release_buffer(gpu_input);
+            cudaFree(gpu_output);
+            continue;
+        }
+
+        // Process on GPU
+        forward(gpu_input, gpu_output);
+
+        // Create output chunk
+        DataChunk output_chunk;
+        output_chunk.data.resize(input_chunk.total_size);
+        output_chunk.chunk_id = input_chunk.chunk_id;
+        output_chunk.total_size = input_chunk.total_size;
+        output_chunk.is_last = input_chunk.is_last;
+
+        // Copy output from GPU
+        cudaMemcpy(output_chunk.data.data(), gpu_output,
+                   input_chunk.total_size * sizeof(double),
+                   cudaMemcpyDeviceToHost);
+
+        // Push to output buffer
+        output_buffer_->push(output_chunk);
+
+        // Cleanup
+        gpu_buffer_->release_buffer(gpu_input);
+        cudaFree(gpu_output);
+
+        // Signal end if this was the last chunk
+        if (input_chunk.is_last) {
+            output_buffer_->signal_end();
+            break;
+        }
+    }
 }
 
 } // namespace sintellix

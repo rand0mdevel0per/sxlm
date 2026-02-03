@@ -67,6 +67,7 @@ set(SINTELLIX_SOURCES
     src/core/neuron.cu
     src/core/neuron_model.cu
     src/core/multi_gpu.cu
+    src/core/streaming_buffer.cu
     src/core/config.cpp
 
     # Storage
@@ -91,6 +92,7 @@ set(SINTELLIX_HEADERS
     include/sintellix/core/neuron.cuh
     include/sintellix/core/neuron_model.cuh
     include/sintellix/core/multi_gpu.cuh
+    include/sintellix/core/streaming_buffer.cuh
     include/sintellix/core/config.hpp
     include/sintellix/codec/cic_data.hpp
     include/sintellix/codec/vqgan.hpp
