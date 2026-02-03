@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sintellix"
-version = "0.1.0"
+version = "0.1.1"
 description = "High-Performance Neural Network Framework with 3D Grid Architecture"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -44,7 +44,7 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sintellix/sintellix"
+Homepage = "https://github.com/rand0mdevel0per/sintellix"
 Documentation = "https://sintellix.readthedocs.io"
-Repository = "https://github.com/sintellix/sintellix"
-Issues = "https://github.com/sintellix/sintellix/issues"
+Repository = "https://github.com/rand0mdevel0per/sintellix"
+Issues = "https://github.com/rand0mdevel0per/sintellix/issues"

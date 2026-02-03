@@ -46,7 +46,17 @@ Output (Text/Image/Audio)
 
 ## Installation
 
-### Prerequisites
+### Python Package
+
+Install the Python package from PyPI:
+
+```bash
+pip install sintellix
+```
+
+### C++ Library
+
+#### Prerequisites
 
 - CUDA Toolkit 11.8+
 - CMake 3.18+
@@ -54,7 +64,7 @@ Output (Text/Image/Audio)
 - nlohmann_json 3.2.0+
 - zstd
 
-### Build from Source
+#### Build from Source
 
 ```bash
 mkdir build && cd build

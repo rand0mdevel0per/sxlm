@@ -5,7 +5,7 @@ A PyTorch-like framework for building and training neural networks
 with Higher Order Thought (HOT) architecture.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # Import core components
 from .core import (

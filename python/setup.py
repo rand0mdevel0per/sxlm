@@ -50,7 +50,7 @@ setup(
     description="High-Performance Neural Network Framework with 3D Grid Architecture",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/sintellix/sintellix",
+    url="https://github.com/rand0mdevel0per/sintellix",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
