@@ -1,6 +1,7 @@
 #include "sintellix/codec/decoder.hpp"
 #include <cuda_runtime.h>
 #include <iostream>
+#include <fstream>
 
 namespace sintellix {
 
@@ -35,19 +36,48 @@ bool SemanticDecoder::initialize() {
 }
 
 bool SemanticDecoder::load_vocabulary() {
-    // TODO: Load vocabulary from file
-    // For now, use placeholder vocabulary
-    vocabulary_ = {"<pad>", "<unk>", "<sos>", "<eos>"};
-
-    // Add some common words as placeholder
-    std::vector<std::string> common_words = {
-        "the", "a", "an", "is", "are", "was", "were",
-        "hello", "world", "test", "example", "data"
+    // Try to load vocabulary from file
+    const char* vocab_paths[] = {
+        "vocab.txt",
+        "data/vocab.txt",
+        "../data/vocab.txt",
+        "../../data/vocab.txt"
     };
 
-    vocabulary_.insert(vocabulary_.end(), common_words.begin(), common_words.end());
+    bool loaded = false;
+    for (const char* path : vocab_paths) {
+        std::ifstream file(path);
+        if (file.is_open()) {
+            vocabulary_.clear();
+            std::string line;
+            while (std::getline(file, line)) {
+                if (!line.empty()) {
+                    vocabulary_.push_back(line);
+                }
+            }
+            file.close();
+            loaded = true;
+            std::cout << "Vocabulary loaded from " << path << ": "
+                      << vocabulary_.size() << " tokens" << std::endl;
+            break;
+        }
+    }
 
-    std::cout << "Vocabulary loaded: " << vocabulary_.size() << " tokens" << std::endl;
+    // Fall back to placeholder vocabulary if file not found
+    if (!loaded) {
+        std::cout << "Vocabulary file not found, using placeholder vocabulary" << std::endl;
+        vocabulary_ = {"<pad>", "<unk>", "<sos>", "<eos>"};
+
+        // Add some common words as placeholder
+        std::vector<std::string> common_words = {
+            "the", "a", "an", "is", "are", "was", "were",
+            "hello", "world", "test", "example", "data"
+        };
+
+        vocabulary_.insert(vocabulary_.end(), common_words.begin(), common_words.end());
+        std::cout << "Placeholder vocabulary loaded: " << vocabulary_.size() << " tokens" << std::endl;
+    }
+
     return true;
 }
 

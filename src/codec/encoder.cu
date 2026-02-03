@@ -99,14 +99,63 @@ bool SemanticEncoder::load_clip_model() {
 #endif
 }
 
+// Helper function: Simplified CLIP tokenizer (word-level)
+static std::vector<int> tokenize_text(const std::string& text, int max_length = 77) {
+    std::vector<int> tokens;
+
+    // Special tokens
+    const int SOT_TOKEN = 49406;  // Start of text
+    const int EOT_TOKEN = 49407;  // End of text
+    const int PAD_TOKEN = 0;      // Padding
+
+    tokens.push_back(SOT_TOKEN);
+
+    // Simple word-level tokenization
+    std::string word;
+    for (char c : text) {
+        if (std::isspace(c) || std::ispunct(c)) {
+            if (!word.empty()) {
+                // Hash word to token ID (simplified)
+                int token_id = std::hash<std::string>{}(word) % 49405 + 1;
+                tokens.push_back(token_id);
+                word.clear();
+            }
+        } else {
+            word += std::tolower(c);
+        }
+    }
+
+    if (!word.empty()) {
+        int token_id = std::hash<std::string>{}(word) % 49405 + 1;
+        tokens.push_back(token_id);
+    }
+
+    tokens.push_back(EOT_TOKEN);
+
+    // Pad or truncate to max_length
+    if (tokens.size() < max_length) {
+        tokens.resize(max_length, PAD_TOKEN);
+    } else if (tokens.size() > max_length) {
+        tokens.resize(max_length);
+        tokens[max_length - 1] = EOT_TOKEN;
+    }
+
+    return tokens;
+}
+
 bool SemanticEncoder::run_clip_text_inference(const std::vector<std::string>& texts, double* output, size_t batch_size) {
 #ifdef USE_ONNXRUNTIME
     try {
-        // TODO: Implement proper tokenization
-        // CLIP uses BPE tokenizer which requires vocabulary file
-        // For now, this is a simplified placeholder
+        // CLIP text tokenization
+        std::vector<std::vector<int>> tokenized_batch;
+        for (const auto& text : texts) {
+            tokenized_batch.push_back(tokenize_text(text, 77));
+        }
 
-        std::cerr << "Warning: CLIP tokenizer not yet implemented, using placeholder" << std::endl;
+        std::cout << "Tokenized " << texts.size() << " texts (simplified tokenizer)" << std::endl;
+
+        // Note: Full implementation would run ONNX inference here
+        std::cerr << "Warning: CLIP model inference not yet connected, using placeholder embeddings" << std::endl;
 
         // Generate placeholder embeddings
         std::vector<double> embeddings(batch_size * 512);
@@ -122,7 +171,7 @@ bool SemanticEncoder::run_clip_text_inference(const std::vector<std::string>& te
         return false;
     }
 #else
-    // Placeholder implementation
+    // Placeholder implementation without ONNX Runtime
     std::vector<double> embeddings(batch_size * 512);
     for (size_t i = 0; i < batch_size * 512; i++) {
         embeddings[i] = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
@@ -133,13 +182,68 @@ bool SemanticEncoder::run_clip_text_inference(const std::vector<std::string>& te
 #endif
 }
 
+// Helper function: Bilinear interpolation for image resizing
+static void resize_image(const uint8_t* src, int src_w, int src_h,
+                        std::vector<float>& dst, int dst_w, int dst_h) {
+    dst.resize(dst_w * dst_h * 3);
+
+    float x_ratio = (float)src_w / dst_w;
+    float y_ratio = (float)src_h / dst_h;
+
+    for (int y = 0; y < dst_h; y++) {
+        for (int x = 0; x < dst_w; x++) {
+            float src_x = x * x_ratio;
+            float src_y = y * y_ratio;
+
+            int x1 = (int)src_x;
+            int y1 = (int)src_y;
+            int x2 = std::min(x1 + 1, src_w - 1);
+            int y2 = std::min(y1 + 1, src_h - 1);
+
+            float dx = src_x - x1;
+            float dy = src_y - y1;
+
+            for (int c = 0; c < 3; c++) {
+                float v1 = src[(y1 * src_w + x1) * 3 + c];
+                float v2 = src[(y1 * src_w + x2) * 3 + c];
+                float v3 = src[(y2 * src_w + x1) * 3 + c];
+                float v4 = src[(y2 * src_w + x2) * 3 + c];
+
+                float val = v1 * (1 - dx) * (1 - dy) +
+                           v2 * dx * (1 - dy) +
+                           v3 * (1 - dx) * dy +
+                           v4 * dx * dy;
+
+                dst[(y * dst_w + x) * 3 + c] = val;
+            }
+        }
+    }
+}
+
 bool SemanticEncoder::run_clip_image_inference(const uint8_t* image_data, int width, int height, double* output) {
 #ifdef USE_ONNXRUNTIME
     try {
-        // TODO: Implement proper image preprocessing
-        // CLIP requires specific image preprocessing (resize, normalize, etc.)
+        // CLIP image preprocessing
+        const int target_size = 224;
 
-        std::cerr << "Warning: CLIP image preprocessing not yet implemented, using placeholder" << std::endl;
+        // Step 1: Resize to 224x224
+        std::vector<float> resized;
+        resize_image(image_data, width, height, resized, target_size, target_size);
+
+        // Step 2: Normalize with CLIP's mean and std
+        const float mean[3] = {0.48145466f, 0.45782750f, 0.40821073f};
+        const float std[3] = {0.26862954f, 0.26130258f, 0.27577711f};
+
+        std::vector<float> normalized(target_size * target_size * 3);
+        for (int i = 0; i < target_size * target_size; i++) {
+            for (int c = 0; c < 3; c++) {
+                float pixel = resized[i * 3 + c] / 255.0f;  // Convert to [0, 1]
+                normalized[i * 3 + c] = (pixel - mean[c]) / std[c];
+            }
+        }
+
+        // Step 3: Run CLIP inference (placeholder - requires ONNX model)
+        std::cerr << "Warning: CLIP model inference not yet connected, using placeholder" << std::endl;
 
         // Generate placeholder embeddings
         std::vector<double> embeddings(512);
@@ -155,7 +259,7 @@ bool SemanticEncoder::run_clip_image_inference(const uint8_t* image_data, int wi
         return false;
     }
 #else
-    // Placeholder implementation
+    // Placeholder implementation without ONNX Runtime
     std::vector<double> embeddings(512);
     for (size_t i = 0; i < 512; i++) {
         embeddings[i] = ((double)rand() / RAND_MAX) * 2.0 - 1.0;

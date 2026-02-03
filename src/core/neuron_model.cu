@@ -2,9 +2,21 @@
 #include <cuda_runtime.h>
 #include <fstream>
 #include <zstd.h>
+#include <algorithm>
+#include <numeric>
 #include "model_state.pb.h"
 
 namespace sintellix {
+
+// Forward declaration of global aggregation kernel from neuron.cu
+__global__ void global_aggregation_kernel(
+    const double* local_output,
+    const double** all_neurons_output,
+    double* aggregated_output,
+    const int* top_k_indices,
+    int dim,
+    int top_k
+);
 
 // ============================================================================
 // KFEManager Implementation
@@ -207,9 +219,55 @@ void NeuronModel::update_parameters(float learning_rate) {
 }
 
 void NeuronModel::global_aggregation() {
-    // Simplified global aggregation
-    // In full implementation, this would use sparse attention across neurons
-    // For now, just a placeholder
+    // Get global aggregation config
+    uint32_t top_k = config_.global_aggregation().top_k();
+    if (top_k == 0 || top_k > total_neurons_) {
+        top_k = std::min(256u, total_neurons_);  // Default: top 256 neurons
+    }
+
+    // Allocate temporary buffers for neuron outputs and importance scores
+    std::vector<double*> neuron_outputs_cpu(total_neurons_);
+    std::vector<double> importance_scores(total_neurons_);
+
+    // Calculate importance scores for each neuron (using L2 norm of output)
+    // Note: This is a simplified version. In production, you'd want to store
+    // neuron outputs during forward pass for efficiency
+    for (size_t i = 0; i < total_neurons_; i++) {
+        // For now, use neuron position as a proxy for importance
+        // In full implementation, this would use actual output norms
+        int x = i / (grid_y_ * grid_z_);
+        int y = (i / grid_z_) % grid_y_;
+        int z = i % grid_z_;
+
+        // Simple importance metric: distance from center
+        double cx = grid_x_ / 2.0;
+        double cy = grid_y_ / 2.0;
+        double cz = grid_z_ / 2.0;
+        double dist = std::sqrt((x - cx) * (x - cx) +
+                               (y - cy) * (y - cy) +
+                               (z - cz) * (z - cz));
+        importance_scores[i] = 1.0 / (1.0 + dist);  // Higher score for center neurons
+    }
+
+    // Select top-K neurons based on importance scores
+    std::vector<int> indices(total_neurons_);
+    std::iota(indices.begin(), indices.end(), 0);
+    std::partial_sort(indices.begin(), indices.begin() + top_k, indices.end(),
+                     [&importance_scores](int a, int b) {
+                         return importance_scores[a] > importance_scores[b];
+                     });
+
+    // Copy top-K indices to GPU
+    int* top_k_indices_gpu;
+    cudaMalloc(&top_k_indices_gpu, top_k * sizeof(int));
+    cudaMemcpy(top_k_indices_gpu, indices.data(), top_k * sizeof(int), cudaMemcpyHostToDevice);
+
+    // Note: Full implementation would call global_aggregation_kernel here
+    // For now, we've implemented the selection logic
+    // The kernel call would require storing individual neuron outputs
+
+    // Cleanup
+    cudaFree(top_k_indices_gpu);
 }
 
 void NeuronModel::replay_context(const std::vector<const double*>& history, bool fast_mode) {
