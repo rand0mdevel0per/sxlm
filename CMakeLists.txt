@@ -13,6 +13,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/rand0mdevel0per/nmdb.git
     GIT_TAG master
 )
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(nmdb)
 
 # Add nmdb include directories
@@ -78,8 +79,9 @@ set(SINTELLIX_SOURCES
     src/codec/decoder.cu
 
     # CIC channel operations
-    src/cic_channel_ops.cpp
-    src/model_cic_processor.cpp
+    # Temporarily disabled due to nmdb Windows compatibility issues
+    # src/cic_channel_ops.cpp
+    # src/model_cic_processor.cpp
     src/embedding_config_loader.cpp
 
     ${PROTO_SRCS}
@@ -95,8 +97,9 @@ set(SINTELLIX_HEADERS
     include/sintellix/codec/encoder.hpp
     include/sintellix/codec/decoder.hpp
     include/sintellix/storage/tiered_storage.cuh
-    include/sintellix/cic_channel_ops.h
-    include/sintellix/model_cic_processor.h
+    # Temporarily disabled due to nmdb Windows compatibility issues
+    # include/sintellix/cic_channel_ops.h
+    # include/sintellix/model_cic_processor.h
     include/sintellix/embedding_config_loader.h
 )
 
@@ -106,6 +109,7 @@ add_library(sintellix SHARED ${SINTELLIX_SOURCES} ${SINTELLIX_HEADERS})
 target_link_libraries(sintellix
     CUDA::cudart
     CUDA::cublas
+    # nmdb  # Temporarily disabled due to Windows compatibility issues
 )
 
 # Optional libraries
