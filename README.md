@@ -1,11 +1,11 @@
-# Sintellix
+# SXLM (Sintellix Language Model)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CUDA](https://img.shields.io/badge/CUDA-13.0-green.svg)](https://developer.nvidia.com/cuda-toolkit)
 [![C++](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 
-**Sintellix** is a high-performance neural network framework built on CUDA, featuring a novel 3D grid-based neuron architecture with semantic encoding/decoding capabilities. It combines VQ-GAN compression, multi-head attention, and hierarchical storage for efficient multi-modal learning.
+**SXLM (Sintellix Language Model)** is an advanced language model built on the Sintellix framework, featuring HOT (High-Order Thought), NSA (Natively Sparse Attention), Engram (Hash n-gram Memory), SCT (Semantic Context Tree), el-trace (Eligibility Trace), and multi-modal support. SXLM aims to achieve competitive performance with Claude Opus 4.6 while maintaining efficiency through novel architectural innovations.
 
 ## 🌟 Highlights
 

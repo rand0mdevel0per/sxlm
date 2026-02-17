@@ -3,16 +3,16 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sintellix"
-version = "0.1.1"
-description = "High-Performance Neural Network Framework with 3D Grid Architecture"
+name = "sxlm"
+version = "0.2.0"
+description = "SXLM (Sintellix Language Model) - Advanced language model with HOT, NSA, Engram, SCT, el-trace, and multi-modal support"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
     {name = "randomdevel0per, Anthropic Claude Sonnet 4.5", email = "noreply@anthropic.com"}
 ]
-keywords = ["neural-networks", "cuda", "deep-learning", "attention", "vq-gan"]
+keywords = ["language-model", "neural-networks", "cuda", "deep-learning", "attention", "multi-modal", "hot", "nsa", "engram"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -44,7 +44,7 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rand0mdevel0per/sintellix"
-Documentation = "https://sintellix.readthedocs.io"
-Repository = "https://github.com/rand0mdevel0per/sintellix"
-Issues = "https://github.com/rand0mdevel0per/sintellix/issues"
+Homepage = "https://github.com/rand0mdevel0per/sxlm"
+Documentation = "https://sxlm.readthedocs.io"
+Repository = "https://github.com/rand0mdevel0per/sxlm"
+Issues = "https://github.com/rand0mdevel0per/sxlm/issues"
