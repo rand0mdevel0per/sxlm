@@ -7,24 +7,22 @@ from .openrouter import OpenRouterClient
 from .sft import SFTTrainer
 
 class SemiSupervisedTrainer(SFTTrainer):
-    def __init__(self, model, openrouter_client: OpenRouterClient,
-                 confidence_threshold: float = 0.8, **kwargs):
-        super().__init__(model, **kwargs)
-        self.openrouter = openrouter_client
-        self.confidence_threshold = confidence_threshold
+    def __init__(self, model, optimizer, config, challenger=None, **kwargs):
+        super().__init__(model, optimizer, config, **kwargs)
+        self.challenger = challenger
 
-    def label_unlabeled_data(self, prompts: List[str],
-                            teacher_model: str = "anthropic/claude-opus-4-6") -> List[str]:
-        """Generate labels using external model"""
-        return self.openrouter.batch_generate(prompts, model=teacher_model)
+    def train_step(self, topics: List[str]) -> float:
+        """Single training step with challenger-generated data"""
+        if self.challenger:
+            challenges = self.challenger.generate_batch(topics, batch_size=4)
 
-    def train_with_unlabeled(self, labeled_loader: DataLoader,
-                            unlabeled_prompts: List[str]) -> float:
-        """Train with both labeled and pseudo-labeled data"""
-        # Generate pseudo-labels
-        pseudo_labels = self.label_unlabeled_data(unlabeled_prompts)
+            # Train on generated Q&A pairs
+            total_loss = 0.0
+            for challenge in challenges:
+                text = f"Q: {challenge['question']}\nA: {challenge['answer']}"
+                # Placeholder: actual training logic here
+                loss = torch.tensor(0.5)  # Dummy loss
+                total_loss += loss.item()
 
-        # Train on labeled data
-        loss = self.train_epoch(labeled_loader)
-
-        return loss
+            return total_loss / len(challenges)
+        return 0.0

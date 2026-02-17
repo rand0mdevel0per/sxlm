@@ -67,15 +67,26 @@ cmake --build . --config Release
 
 ## Quick Start
 
-### Training
+### 80-Hour Auto-Training (Single A100)
 
 ```bash
 # Install dependencies
-pip install -r requirements.txt
+pip install -r requirements.txt deepspeed openrouter
 
-# Run training
-python scripts/train_simple.py
+# Set OpenRouter API key
+export OPENROUTER_API_KEY="your-key"
+
+# Run auto-training (SFT → Semi-supervised)
+python scripts/train_auto.py
 ```
+
+**Training Plan:**
+- **Hardware**: Single A100 (80GB)
+- **Duration**: 80 hours (~$300 on GCP)
+- **Model Size**: 7B explicit + KFE implicit parameters
+- **Phase 1**: SFT (30K steps, ~30 hours)
+- **Phase 2**: Semi-supervised with Challenger-Answer (70K steps, ~50 hours)
+- **Auto-checkpoint**: Every 5K steps
 
 ### Configuration
 

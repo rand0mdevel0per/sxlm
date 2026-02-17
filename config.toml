@@ -1,14 +1,24 @@
 # SXLM Quila Configuration
 
 [model]
-dim = 768
-num_heads = 12
-num_layers = 24
+dim = 1024
+num_heads = 16
+num_layers = 60
 max_seq_len = 128000
 
 [training]
 learning_rate = 1e-4
 el_trace_decay = 0.9
+batch_size = 4
+gradient_accumulation_steps = 8
+max_steps = 100000
+warmup_steps = 1000
+save_steps = 5000
+logging_steps = 100
+
+# Auto-transition from SFT to semi-supervised
+sft_steps = 30000
+semi_supervised_steps = 70000
 
 [hot]
 hot_threshold = 0.5
