@@ -1,0 +1,30 @@
+# SXLM Quila Configuration
+
+[model]
+dim = 768
+num_heads = 12
+num_layers = 24
+max_seq_len = 128000
+
+[training]
+learning_rate = 1e-4
+el_trace_decay = 0.9
+
+[hot]
+hot_threshold = 0.5
+global_heads = 4
+local_heads = 4
+selector_heads = 4
+local_window = 512
+
+[engram]
+num_hash_tables = 8
+max_ngram_len = 5
+
+[sct]
+branching_factor = 32
+max_depth = 27
+
+[storage]
+gpu_cache_mb = 8192
+ram_cache_mb = 32768

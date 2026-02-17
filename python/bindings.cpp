@@ -9,6 +9,17 @@
 #include "sintellix/core/config.hpp"
 #include "sintellix/core/neuron_model.cuh"
 
+// SXLM Phase 3 components
+#include "sxlm/core/toml_config.hpp"
+#include "sxlm/attention/hot_nsa.cuh"
+#include "sxlm/memory/engram.cuh"
+#include "sxlm/memory/sct.cuh"
+#include "sxlm/training/el_trace.cuh"
+#include "sxlm/training/mhc.cuh"
+#include "sxlm/planning/ring_buffer.cuh"
+#include "sxlm/multimodal/fusion.cuh"
+#include "sxlm/tools/tool_port.cuh"
+
 namespace py = pybind11;
 
 PYBIND11_MODULE(_sintellix_native, m) {
@@ -71,16 +82,9 @@ PYBIND11_MODULE(_sintellix_native, m) {
         .def("decode_to_text", &sintellix::SemanticDecoder::decode_to_text)
         .def("get_output_dim", &sintellix::SemanticDecoder::get_output_dim);
 
-    // ConfigManager bindings
-    py::class_<sintellix::ConfigManager>(m, "ConfigManager")
-        .def(py::init<>())
-        .def("load_from_json", &sintellix::ConfigManager::loadFromJson)
-        .def("load_from_proto", &sintellix::ConfigManager::loadFromProto)
-        .def("save_to_json", &sintellix::ConfigManager::saveToJson)
-        .def("save_to_proto", &sintellix::ConfigManager::saveToProto)
-        .def("get_config", py::overload_cast<>(&sintellix::ConfigManager::getConfig),
-             py::return_value_policy::reference_internal)
-        .def_static("create_default", &sintellix::ConfigManager::createDefault);
+    // ConfigManager bindings (disabled - requires Protobuf)
+    // py::class_<sintellix::ConfigManager>(m, "ConfigManager")
+    //     .def(py::init<>());
 
     // KFEManager bindings
     py::class_<sintellix::KFEManager>(m, "KFEManager")
@@ -88,13 +92,40 @@ PYBIND11_MODULE(_sintellix_native, m) {
         .def("has_kfe", &sintellix::KFEManager::has_kfe)
         .def("get_slot_count", &sintellix::KFEManager::get_slot_count);
 
-    // NeuronModel bindings
-    py::class_<sintellix::NeuronModel>(m, "NeuronModel")
-        .def(py::init<const sintellix::NeuronConfig&>())
-        .def("initialize", &sintellix::NeuronModel::initialize)
-        .def("update_parameters", &sintellix::NeuronModel::update_parameters)
-        .def("save_state", &sintellix::NeuronModel::save_state)
-        .def("load_state", &sintellix::NeuronModel::load_state)
-        .def("get_kfe_manager", &sintellix::NeuronModel::get_kfe_manager,
-             py::return_value_policy::reference_internal);
+    // NeuronModel bindings (disabled - requires Protobuf NeuronConfig)
+    // py::class_<sintellix::NeuronModel>(m, "NeuronModel")
+    //     .def(py::init<const sintellix::NeuronConfig&>());
+
+    // ========== SXLM Phase 3 Components ==========
+
+    // QuilaConfig (TOML-based)
+    py::class_<sxlm::QuilaConfig>(m, "QuilaConfig")
+        .def(py::init<>())
+        .def_readwrite("dim", &sxlm::QuilaConfig::dim)
+        .def_readwrite("num_heads", &sxlm::QuilaConfig::num_heads)
+        .def_readwrite("num_layers", &sxlm::QuilaConfig::num_layers)
+        .def_readwrite("learning_rate", &sxlm::QuilaConfig::learning_rate)
+        .def_static("load", &sxlm::QuilaConfig::load)
+        .def("save", &sxlm::QuilaConfig::save);
+
+    // HOTConfig
+    py::class_<sxlm::HOTConfig>(m, "HOTConfig")
+        .def(py::init<>())
+        .def_readwrite("dim", &sxlm::HOTConfig::dim)
+        .def_readwrite("num_heads", &sxlm::HOTConfig::num_heads)
+        .def_readwrite("hot_threshold", &sxlm::HOTConfig::hot_threshold);
+
+    // EngramConfig
+    py::class_<sxlm::EngramConfig>(m, "EngramConfig")
+        .def(py::init<>())
+        .def_readwrite("embedding_dim", &sxlm::EngramConfig::embedding_dim)
+        .def_readwrite("num_hash_tables", &sxlm::EngramConfig::num_hash_tables);
+
+    // ToolType enum
+    py::enum_<sxlm::ToolType>(m, "ToolType")
+        .value("WEB_SEARCH", sxlm::ToolType::WEB_SEARCH)
+        .value("CODE_EXEC", sxlm::ToolType::CODE_EXEC)
+        .value("FILE_OPS", sxlm::ToolType::FILE_OPS)
+        .value("MATH", sxlm::ToolType::MATH)
+        .export_values();
 }

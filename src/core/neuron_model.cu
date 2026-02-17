@@ -1,10 +1,16 @@
 #include "sintellix/core/neuron_model.cuh"
 #include <cuda_runtime.h>
 #include <fstream>
+#include <iostream>
+#include <chrono>
+#ifdef USE_ZSTD
 #include <zstd.h>
+#endif
 #include <algorithm>
 #include <numeric>
+#ifdef USE_PROTOBUF
 #include "model_state.pb.h"
+#endif
 
 namespace sintellix {
 
@@ -310,6 +316,7 @@ void NeuronModel::replay_context(const std::vector<const double*>& history, bool
     cudaFree(temp_output);
 }
 
+#ifdef USE_PROTOBUF
 bool NeuronModel::save_state(const std::string& path) {
     // Create ModelState protobuf
     ModelState model_state;
@@ -336,6 +343,7 @@ bool NeuronModel::save_state(const std::string& path) {
         return false;
     }
 
+#ifdef USE_ZSTD
     // Compress with zstd
     size_t compressed_bound = ZSTD_compressBound(serialized.size());
     std::vector<char> compressed(compressed_bound);
@@ -357,6 +365,15 @@ bool NeuronModel::save_state(const std::string& path) {
     }
 
     file.write(compressed.data(), compressed_size);
+#else
+    // Write uncompressed
+    std::ofstream file(path, std::ios::binary);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    file.write(serialized.data(), serialized.size());
+#endif
     file.close();
 
     return true;
@@ -377,6 +394,7 @@ bool NeuronModel::load_state(const std::string& path) {
     file.read(compressed.data(), file_size);
     file.close();
 
+#ifdef USE_ZSTD
     // Decompress
     unsigned long long decompressed_size = ZSTD_getFrameContentSize(compressed.data(), file_size);
     if (decompressed_size == ZSTD_CONTENTSIZE_ERROR || decompressed_size == ZSTD_CONTENTSIZE_UNKNOWN) {
@@ -392,6 +410,11 @@ bool NeuronModel::load_state(const std::string& path) {
     if (ZSTD_isError(actual_size)) {
         return false;
     }
+#else
+    // No decompression, use data directly
+    std::vector<char> decompressed = compressed;
+    size_t actual_size = decompressed.size();
+#endif
 
     // Deserialize protobuf
     ModelState model_state;
@@ -407,6 +430,16 @@ bool NeuronModel::load_state(const std::string& path) {
 
     return true;
 }
+#else
+// Stub implementations when Protobuf is not available
+bool NeuronModel::save_state(const std::string& path) {
+    return false;
+}
+
+bool NeuronModel::load_state(const std::string& path) {
+    return false;
+}
+#endif
 
 // Multi-GPU support methods
 bool NeuronModel::enable_multi_gpu(const std::vector<int>& device_ids) {

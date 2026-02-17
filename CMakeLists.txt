@@ -19,19 +19,19 @@ find_package(nlohmann_json 3.2.0)
 find_package(zstd)
 
 # Fetch nmdb as external dependency
-# Note: nmdb needs Protobuf, so we find it first and pass to nmdb
-include(FetchContent)
-FetchContent_Declare(
-    nmdb
-    GIT_REPOSITORY https://github.com/rand0mdevel0per/nmdb.git
-    GIT_TAG master
-)
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(nmdb)
+# Temporarily disabled for Phase 3 testing
+# include(FetchContent)
+# FetchContent_Declare(
+#     nmdb
+#     GIT_REPOSITORY https://github.com/rand0mdevel0per/nmdb.git
+#     GIT_TAG master
+# )
+# set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+# FetchContent_MakeAvailable(nmdb)
 
 # Add nmdb include directories
-include_directories(${nmdb_SOURCE_DIR}/include)
-include_directories(${nmdb_BINARY_DIR})
+# include_directories(${nmdb_SOURCE_DIR}/include)
+# include_directories(${nmdb_BINARY_DIR})
 
 # ONNX Runtime (for CLIP model inference)
 find_package(onnxruntime CONFIG)
@@ -69,6 +69,7 @@ set(SINTELLIX_SOURCES
     src/core/multi_gpu.cu
     src/core/streaming_buffer.cu
     src/core/config.cpp
+    src/core/toml_config.cpp
 
     # Storage
     src/storage/tiered_storage.cu
@@ -84,6 +85,16 @@ set(SINTELLIX_SOURCES
     # src/cic_channel_ops.cpp
     # src/model_cic_processor.cpp
     src/embedding_config_loader.cpp
+
+    # Phase 3: QualiaTrace components
+    src/attention/hot_nsa.cu
+    src/memory/engram.cu
+    src/memory/sct.cu
+    src/training/el_trace.cu
+    src/training/mhc.cu
+    src/planning/ring_buffer.cu
+    src/multimodal/fusion.cu
+    src/tools/tool_port.cu
 
     ${PROTO_SRCS}
 )
@@ -117,14 +128,17 @@ target_link_libraries(sintellix
 # Optional libraries
 if(Protobuf_FOUND)
     target_link_libraries(sintellix protobuf::libprotobuf)
+    target_compile_definitions(sintellix PRIVATE USE_PROTOBUF)
 endif()
 
 if(nlohmann_json_FOUND)
     target_link_libraries(sintellix nlohmann_json::nlohmann_json)
+    target_compile_definitions(sintellix PRIVATE USE_NLOHMANN_JSON)
 endif()
 
 if(zstd_FOUND)
     target_link_libraries(sintellix zstd::libzstd_shared)
+    target_compile_definitions(sintellix PRIVATE USE_ZSTD)
 endif()
 
 if(onnxruntime_FOUND)

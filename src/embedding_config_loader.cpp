@@ -2,6 +2,7 @@
 #include <fstream>
 #include <stdexcept>
 
+#ifdef USE_PROTOBUF
 namespace sintellix {
 
 EmbeddingConfig EmbeddingConfigLoader::load_from_file(const std::string& config_path) {
@@ -123,3 +124,4 @@ bool EmbeddingConfigLoader::validate_config(const EmbeddingConfig& config) {
 }
 
 } // namespace sintellix
+#endif

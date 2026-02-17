@@ -4,6 +4,7 @@
 
 namespace sintellix {
 
+#ifdef USE_PROTOBUF
 NeuronConfig ConfigManager::createDefault() {
     NeuronConfig config;
 
@@ -57,6 +58,7 @@ NeuronConfig ConfigManager::createDefault() {
     return config;
 }
 
+#ifdef USE_NLOHMANN_JSON
 bool ConfigManager::loadFromJson(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -156,6 +158,7 @@ nlohmann::json ConfigManager::protoToJson(const NeuronConfig& config) const {
 
     return j;
 }
+#endif
 
 bool ConfigManager::loadFromProto(const std::string& path) {
     std::ifstream file(path, std::ios::binary);
@@ -176,5 +179,6 @@ bool ConfigManager::saveToProto(const std::string& path) const {
 
     return config_.SerializeToOstream(&file);
 }
+#endif
 
 } // namespace sintellix

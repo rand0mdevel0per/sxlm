@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#ifdef USE_PROTOBUF
 #include "embedding_config.pb.h"
 
 namespace sintellix {
@@ -50,3 +51,4 @@ public:
 };
 
 } // namespace sintellix
+#endif
