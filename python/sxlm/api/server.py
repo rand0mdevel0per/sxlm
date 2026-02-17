@@ -61,8 +61,9 @@ async def generate_stream(request: QualiaRequest):
 
     await asyncio.sleep(0.1)  # Simulate planning
 
-    # Phase 2: Think (if effort is high)
-    if request.effort in [EffortLevel.HIGH, EffortLevel.ADAPTIVE]:
+    # Phase 2: Think (effort-based)
+    if request.effort == EffortLevel.HIGH:
+        # Full Think phase with deep reasoning
         yield QualiaResponse(
             msg_type=MessageType.THINK,
             text="Processing with deep reasoning...",
@@ -70,9 +71,31 @@ async def generate_stream(request: QualiaRequest):
             model=request.model
         )
         await asyncio.sleep(0.1)
+    elif request.effort == EffortLevel.MEDIUM:
+        # Lightweight Think phase
+        yield QualiaResponse(
+            msg_type=MessageType.THINK,
+            text="Processing...",
+            continue_=True,
+            model=request.model
+        )
+        await asyncio.sleep(0.05)
+    elif request.effort == EffortLevel.ADAPTIVE:
+        # Planner-Port dynamically controls effort based on task complexity
+        # TODO: Integrate with actual Planner-Port effort signal
+        planner_effort = 0.7  # Will come from Planner-Port.forward()
+        if planner_effort > 0.6:
+            yield QualiaResponse(
+                msg_type=MessageType.THINK,
+                text="Processing with adaptive reasoning...",
+                continue_=True,
+                model=request.model
+            )
+            await asyncio.sleep(0.1 * planner_effort)
+    # LOW: Skip Think phase entirely
 
     # Phase 3: Execute - stream text response
-    response_text = "I am Qualia, an AI assistant developed by Defrate.IO & Claude.ai. "
+    response_text = "I am Qualia, an AI assistant developed by Defrate.IO. "
 
     for i, char in enumerate(response_text):
         yield QualiaResponse(
