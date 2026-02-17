@@ -3,59 +3,46 @@
 #include <cuda_runtime.h>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 namespace sxlm {
 
-// Tool Port: Structured symbolic output for tool calls
-
-enum class ToolType {
-    WEB_SEARCH,
-    CODE_EXEC,
-    FILE_OPS,
-    DB_QUERY,
-    API_CALL,
-    MATH,
-    VIZ,
-    TEXT_GEN,
-    IMAGE_GEN,
-    AUDIO_PROC,
-    VIDEO_PROC,
-    TRANSLATE,
-    SUMMARIZE,
-    QA,
-    REASONING,
-    PLANNING
+// MCP Tool descriptor
+struct MCPTool {
+    std::string name;
+    std::string description;
+    std::unordered_map<std::string, std::string> schema;
 };
 
 struct ToolPortConfig {
-    int dim;                    // Model dimension
-    int num_tools;              // Number of tool types (16)
-    int max_param_len;          // Max parameter length
+    int dim;
+    int max_param_len;
 };
 
+// MCP-based Tool Port
 class ToolPort {
 public:
     ToolPort(const ToolPortConfig& config);
     ~ToolPort();
 
-    // Classify tool type from hidden state
-    ToolType classify(
-        const double* hidden_state,
-        int seq_len
-    );
+    // Discover tools from MCP server
+    void discover_tools(const std::string& mcp_server_url);
 
-    // Generate tool parameters
-    void generate_params(
-        const double* hidden_state,
-        ToolType tool_type,
-        double* params,
-        int seq_len
-    );
+    // Classify which tool to use
+    std::string classify(const double* hidden_state, int seq_len);
+
+    // Generate parameters for tool
+    void generate_params(const double* hidden_state, const std::string& tool_name,
+                        double* params, int seq_len);
+
+    // Get available tools
+    std::vector<MCPTool> get_tools() const { return tools_; }
 
 private:
     ToolPortConfig config_;
-    double* classifier_weights_;    // Tool classifier weights
-    double* param_weights_;         // Parameter generator weights
+    std::vector<MCPTool> tools_;
+    double* classifier_weights_;
+    double* param_weights_;
 };
 
 } // namespace sxlm

@@ -121,11 +121,9 @@ PYBIND11_MODULE(_sintellix_native, m) {
         .def_readwrite("embedding_dim", &sxlm::EngramConfig::embedding_dim)
         .def_readwrite("num_hash_tables", &sxlm::EngramConfig::num_hash_tables);
 
-    // ToolType enum
-    py::enum_<sxlm::ToolType>(m, "ToolType")
-        .value("WEB_SEARCH", sxlm::ToolType::WEB_SEARCH)
-        .value("CODE_EXEC", sxlm::ToolType::CODE_EXEC)
-        .value("FILE_OPS", sxlm::ToolType::FILE_OPS)
-        .value("MATH", sxlm::ToolType::MATH)
-        .export_values();
+    // MCPTool
+    py::class_<sxlm::MCPTool>(m, "MCPTool")
+        .def(py::init<>())
+        .def_readwrite("name", &sxlm::MCPTool::name)
+        .def_readwrite("description", &sxlm::MCPTool::description);
 }

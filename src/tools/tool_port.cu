@@ -1,5 +1,6 @@
 #include "sxlm/tools/tool_port.cuh"
 #include <cmath>
+#include <algorithm>
 
 namespace sxlm {
 
@@ -40,7 +41,6 @@ __global__ void generate_params_kernel(
 
 ToolPort::ToolPort(const ToolPortConfig& config)
     : config_(config), classifier_weights_(nullptr), param_weights_(nullptr) {
-    cudaMalloc(&classifier_weights_, config.num_tools * config.dim * sizeof(double));
     cudaMalloc(&param_weights_, config.max_param_len * config.dim * sizeof(double));
 }
 
@@ -49,34 +49,42 @@ ToolPort::~ToolPort() {
     if (param_weights_) cudaFree(param_weights_);
 }
 
-ToolType ToolPort::classify(
-    const double* hidden_state,
-    int seq_len
-) {
-    double* d_logits;
-    cudaMalloc(&d_logits, config_.num_tools * sizeof(double));
+void ToolPort::discover_tools(const std::string& mcp_server_url) {
+    // TODO: Implement MCP server discovery via HTTP
+    // For now, use placeholder tools
+    tools_.clear();
+    tools_.push_back({"web_search", "Search the web", {}});
+    tools_.push_back({"code_exec", "Execute code", {}});
+    tools_.push_back({"file_ops", "File operations", {}});
 
-    classify_tool_kernel<<<config_.num_tools, 1>>>(
+    // Allocate classifier weights for discovered tools
+    if (classifier_weights_) cudaFree(classifier_weights_);
+    cudaMalloc(&classifier_weights_, tools_.size() * config_.dim * sizeof(double));
+}
+
+std::string ToolPort::classify(const double* hidden_state, int seq_len) {
+    if (tools_.empty()) return "";
+
+    double* d_logits;
+    cudaMalloc(&d_logits, tools_.size() * sizeof(double));
+
+    classify_tool_kernel<<<tools_.size(), 1>>>(
         hidden_state, classifier_weights_, d_logits,
-        seq_len, config_.dim, config_.num_tools
+        seq_len, config_.dim, tools_.size()
     );
 
-    std::vector<double> logits(config_.num_tools);
-    cudaMemcpy(logits.data(), d_logits, config_.num_tools * sizeof(double),
+    std::vector<double> logits(tools_.size());
+    cudaMemcpy(logits.data(), d_logits, tools_.size() * sizeof(double),
                cudaMemcpyDeviceToHost);
     cudaFree(d_logits);
 
-    int max_idx = 0;
-    for (int i = 1; i < config_.num_tools; i++) {
-        if (logits[i] > logits[max_idx]) max_idx = i;
-    }
-
-    return static_cast<ToolType>(max_idx);
+    int max_idx = std::max_element(logits.begin(), logits.end()) - logits.begin();
+    return tools_[max_idx].name;
 }
 
 void ToolPort::generate_params(
     const double* hidden_state,
-    ToolType tool_type,
+    const std::string& tool_name,
     double* params,
     int seq_len
 ) {
