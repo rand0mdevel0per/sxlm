@@ -1,268 +1,182 @@
-# SXLM (Sintellix Language Model)
+# SXLM "Quila" - QualiaTrace Language Model
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CUDA](https://img.shields.io/badge/CUDA-13.0-green.svg)](https://developer.nvidia.com/cuda-toolkit)
+[![CUDA](https://img.shields.io/badge/CUDA-11.8+-green.svg)](https://developer.nvidia.com/cuda-toolkit)
 [![C++](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.13+-blue.svg)](https://www.python.org/)
 
-**SXLM (Sintellix Language Model)** is an advanced language model built on the Sintellix framework, featuring HOT (High-Order Thought), NSA (Natively Sparse Attention), Engram (Hash n-gram Memory), SCT (Semantic Context Tree), el-trace (Eligibility Trace), and multi-modal support. SXLM aims to achieve competitive performance with Claude Opus 4.6 while maintaining efficiency through novel architectural innovations.
+**SXLM "Quila"** is an advanced language model featuring the QualiaTrace architecture with 8 novel components: HOT-NSA (Hierarchical Sparse Attention), Engram (Hash n-gram Memory), SCT (Semantic Context Tree), el-trace (Eligibility Traces), mHC (Manifold Hyperconnections), Ring Buffer Planning, Multi-modal Fusion, and Tool Port. Built on CUDA C++ with Python bindings and cloud deployment support.
 
-## 🌟 Highlights
+## 🌟 QualiaTrace Architecture
 
-- **3D Grid Neuron Architecture**: Spatially-organized neurons with local and global interactions
-- **Semantic Codec**: VQ-GAN-based compression for unified multi-modal representation
-- **Hybrid Attention**: Multi-head self-attention + sparse global aggregation
-- **Adaptive Training**: Adam optimizer with gradient clipping and noise filtering
-- **Tiered Storage**: Intelligent GPU/RAM/Disk caching for large-scale models
-- **Python Integration**: Easy-to-use Python API via pybind11
+### Phase 3 Components (Implemented)
 
-## Features
+- **HOT-NSA**: Hierarchical sparse attention with dynamic compute budgeting
+- **Engram**: LSH-based n-gram memory for O(1) retrieval
+- **SCT**: Semantic Context Tree with HNSW for 128M token context
+- **el-trace**: Eligibility traces for credit assignment in RL
+- **mHC**: Manifold-constrained hyperconnections for gradient stability
+- **Ring Buffer**: Drift detection and adaptive replanning
+- **Multi-modal Fusion**: Text/image/audio with Interleaved-MRoPE
+- **Tool Port**: 16 structured tool types (web search, code exec, file ops, etc.)
 
-- **Dynamic Dimensions**: Configurable neuron dimensions (128/256/512/1024)
-- **Multi-head Attention**: 8-head attention mechanism for enhanced representation
-- **Global Aggregation**: Sparse attention across neurons for global context
-- **Adaptive Noise Filtering**: EMA-based adaptive threshold filtering
-- **Temporal Attention**: 8-frame temporal context with hierarchical aggregation
-- **FXAA-like Auxiliary Layer**: Edge-aware prediction enhancement
-- **Tiered Storage**: GPU → RAM → Disk hierarchical storage for cold data
-- **VQ-GAN Codec**: Unified semantic space for encoding/decoding
-- **Ablation Study Support**: Configurable module switches for experiments
+### Phase 4 Training Pipeline (Implemented)
+
+- **OpenRouter Integration**: Knowledge distillation from Claude Opus 4.6, GPT-4, etc.
+- **SFT Trainer**: Supervised fine-tuning with cross-entropy loss
+- **Semi-supervised**: Pseudo-labeling with external models
+- **RL Trainer**: PPO with eligibility traces
+- **Cloud Deployment**: Terraform configs for Vertex AI and DigitalOcean
 
 ## Architecture
 
 ```
 Input (Text/Image/Audio)
     ↓
-[Encoder] E5-Large/CLIP → Semantic Space (1024-dim)
+[Multi-modal Fusion] Interleaved-MRoPE
     ↓
-[VQ-GAN Quantizer] → Discrete Codes
+[HOT-NSA] Hierarchical Sparse Attention
     ↓
-[Sintellix Core] Multi-head Neurons with Global Aggregation
+[Engram Memory] LSH n-gram retrieval
     ↓
-[Decoder] VQ-GAN + Autoregressive Transformer
+[SCT] Semantic Context Tree (128M context)
     ↓
-Output (Text/Image/Audio)
+[mHC] Manifold Hyperconnections
+    ↓
+[Tool Port] 16 tool types
+    ↓
+Output + Planning (Ring Buffer)
 ```
 
 ## Installation
 
-### Python Package
-
-Install the Python package from PyPI:
-
-```bash
-pip install sintellix
-```
-
-### C++ Library
-
-#### Prerequisites
+### Prerequisites
 
 - CUDA Toolkit 11.8+
 - CMake 3.18+
-- Protobuf 3.0+
-- nlohmann_json 3.2.0+
-- zstd
+- Python 3.13+
+- PyTorch 2.0+
 
-#### Build from Source
+### Build from Source
 
 ```bash
 mkdir build && cd build
-cmake ..
-make -j$(nproc)
-sudo make install
+cmake .. -DBUILD_PYTHON=ON
+cmake --build . --config Release
 ```
 
 ## Quick Start
 
-### Python API
+### Training
 
-```python
-import sintellix
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-# Load configuration from JSON
-config_manager = sintellix.ConfigManager()
-config_manager.load_from_json("config.json")
-config = config_manager.get_config()
-
-# Create and initialize model
-model = sintellix.NeuronModel(config)
-model.initialize()
-
-# Forward pass
-output = model.forward(input_data)
-
-# Training loop
-for epoch in range(100):
-    # Forward pass
-    output = model.forward(input_data)
-
-    # Compute loss and gradients
-    loss = compute_loss(output, target)
-    grad_output = compute_gradients(loss)
-
-    # Backward pass
-    grad_input = model.backward(grad_output)
-
-    # Update parameters
-    model.update_parameters(learning_rate=0.001)
-
-    # Save checkpoint
-    if epoch % 10 == 0:
-        model.save_state(f"checkpoint_epoch_{epoch}.pb")
-
-# Access KFE manager for knowledge encoding
-kfe_manager = model.get_kfe_manager()
-print(f"Total KFE slots: {kfe_manager.get_slot_count()}")
+# Run training
+python scripts/train_simple.py
 ```
 
-### C++ API
+### Configuration
 
-```cpp
-#include <sintellix/core/neuron_model.cuh>
-#include <sintellix/core/config.hpp>
+TOML configuration (`config.toml`):
 
-// Load configuration
-sintellix::ConfigManager config_mgr;
-config_mgr.loadFromJson("config.json");
-auto config = config_mgr.getConfig();
+```toml
+[model]
+dim = 768
+num_heads = 12
+num_layers = 24
+max_seq_len = 128000
 
-// Create model
-sintellix::NeuronModel model(config);
-model.initialize();
+[training]
+learning_rate = 1e-4
+el_trace_decay = 0.9
 
-// Forward pass
-std::vector<double> input(config.dim());
-std::vector<double> output(config.dim());
-model.forward(input.data(), output.data());
+[hot]
+hot_threshold = 0.5
+global_heads = 4
+local_heads = 4
 
-// Training
-std::vector<double> grad_output(config.dim());
-std::vector<double> grad_input(config.dim());
-model.backward(grad_output.data(), grad_input.data());
-model.update_parameters(0.001f);
+[engram]
+num_hash_tables = 8
+max_ngram_len = 5
 
-// Save model state
-model.save_state("model_state.pb");
+[sct]
+branching_factor = 32
+max_depth = 27
 ```
 
-## Configuration
+### Cloud Deployment
 
-Configuration file example (`config.json`):
+Deploy to Vertex AI:
 
-```json
-{
-  "neuron": {
-    "dim": 256,
-    "num_heads": 8,
-    "grid_size": [32, 32, 32],
-    "temporal_frames": 8
-  },
-  "modules": {
-    "enable_multi_head": true,
-    "enable_global_aggregation": true,
-    "enable_noise_filter": true,
-    "enable_temporal_attention": true,
-    "enable_fxaa_layer": true
-  },
-  "storage": {
-    "gpu_cache_size_mb": 8192,
-    "ram_cache_size_mb": 32768,
-    "disk_cache_path": "/tmp/sintellix_cache"
-  }
-}
+```bash
+# Set project ID
+export PROJECT_ID="your-project-id"
+
+# Deploy
+./deploy.sh $PROJECT_ID us-central1
 ```
+
+See `terraform/vertex/README.md` for details.
 
 ## Performance
 
-Sintellix is optimized for high-throughput training and inference on modern NVIDIA GPUs:
+SXLM "Quila" is optimized for high-throughput training on NVIDIA GPUs:
 
-- **Memory Efficiency**: Tiered storage system automatically manages GPU/RAM/Disk caching
-- **Compute Optimization**: CUDA kernels with `--use_fast_math` for maximum throughput
-- **Batch Processing**: Efficient handling of large batches through grid-based architecture
-- **Multi-GPU Support**: Planned for future releases
+- **HOT-NSA**: 50% FLOPs reduction through sparse attention
+- **Engram**: <1ms retrieval latency with LSH
+- **SCT**: 128M token context with <10ms retrieval
+- **Multi-GPU**: Supported via PyTorch DDP
 
-### Benchmark Results
+## Training Pipeline
 
-| Configuration | GPU | Throughput | Memory Usage |
-|--------------|-----|------------|--------------|
-| dim=128, 32³ grid | RTX 4090 | ~2000 samples/s | ~4GB |
-| dim=256, 32³ grid | RTX 4090 | ~1200 samples/s | ~8GB |
-| dim=512, 32³ grid | RTX 4090 | ~600 samples/s | ~16GB |
+### SFT (Supervised Fine-Tuning)
+```bash
+python scripts/train_sft.py
+```
 
-*Benchmarks measured on single RTX 4090 with batch size 32*
+### Semi-supervised with OpenRouter
+```bash
+export OPENROUTER_API_KEY="your-key"
+python scripts/train_semi.py
+```
+
+### RL with Eligibility Traces
+```bash
+python scripts/train_rl.py
+```
 
 ## Troubleshooting
 
-### Windows Build Issues
+### Build Issues
 
-**vcpkg dependencies fail to install:**
-```bash
-# Use Visual Studio Developer Command Prompt
-# Navigate to project directory
-vcpkg install
-```
+**CUDA not found:**
+- Install CUDA Toolkit 11.8+
+- Verify: `nvcc --version`
 
-**CUDA compiler not found:**
-- Ensure CUDA Toolkit 11.8+ is installed
-- Add CUDA bin directory to PATH
-- Verify with: `nvcc --version`
+**Python bindings fail:**
+- Ensure Python 3.13+ is installed
+- Check CUDA DLLs are in PATH
 
-**Missing mt.exe or rc.exe:**
-- Install Windows SDK 10.0.26100.0 or later
-- Add SDK bin directory to PATH
+### Training Issues
 
-### Runtime Issues
-
-**Out of memory errors:**
-- Reduce `dim` parameter in configuration
-- Decrease `gpu_cache_size_mb` in storage settings
-- Enable disk caching with appropriate `disk_cache_path`
+**Out of memory:**
+- Reduce `dim` or `num_layers` in config.toml
+- Decrease batch size
 
 **Slow training:**
-- Verify GPU is being used: check CUDA device initialization
+- Verify GPU usage: `nvidia-smi`
 - Increase batch size if memory allows
-- Disable unnecessary modules in ablation configuration
-
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Setup
-
-```bash
-# Clone repository
-git clone https://github.com/rand0mdevel0per/sintellix.git
-cd sintellix
-
-# Install dependencies
-vcpkg install
-
-# Build with tests
-mkdir build && cd build
-cmake .. -DBUILD_TESTS=ON
-cmake --build . --config Release
-
-# Run tests
-ctest -C Release
-```
 
 ## Citation
 
-If you use Sintellix in your research, please cite:
-
 ```bibtex
-@software{sintellix2026,
-  title={Sintellix: High-Performance Neural Network Framework with 3D Grid Architecture},
-  author={randomdevel0per and Anthropic Claude Sonnet 4.5},
+@software{sxlm2026,
+  title={SXLM "Quila": QualiaTrace Language Model with HOT-NSA, Engram, and SCT},
+  author={rand0mdevel0per and Claude Sonnet 4.5},
   year={2026},
-  url={https://github.com/rand0mdevel0per/sintellix}
+  url={https://github.com/rand0mdevel0per/sxlm}
 }
 ```
 
