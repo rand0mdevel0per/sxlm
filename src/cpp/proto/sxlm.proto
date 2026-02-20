@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package quila;
+
+message SXLMHeader {
+  bytes magic = 1;
+  uint32 version = 2;
+  SXLMMeta meta = 3;
+  repeated BlockDescriptor blocks = 4;
+}
+
+message SXLMMeta {
+  uint32 neuron_count = 1;
+  uint32 thinker_n = 2;
+  uint32 hidden_dim = 3;
+  uint32 persona_dim = 4;
+  uint32 vqgan_codebook_size = 5;
+  uint64 kfe_count = 6;
+  uint64 graph_edge_count = 7;
+  int64 created_at = 8;
+  bytes checkpoint_sha256 = 9;
+  string base_model_id = 10;
+}
+
+message BlockDescriptor {
+  uint32 block_id = 1;
+  uint64 offset = 2;
+  uint64 size_bytes = 3;
+  uint64 raw_size = 4;
+  uint32 zstd_level = 5;
+  bytes block_sha256 = 6;
+}
