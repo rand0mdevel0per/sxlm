@@ -7,6 +7,8 @@ set(CMAKE_CUDA_ARCHITECTURES 80 86 89 90)
 
 find_package(CUDAToolkit 12.0 REQUIRED)
 find_package(Protobuf 3.21)
+find_package(Python3 COMPONENTS Interpreter Development)
+find_package(pybind11 CONFIG)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
@@ -31,6 +33,13 @@ set_target_properties(quila_core PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
+
+# Python bindings
+if(pybind11_FOUND AND Python3_FOUND)
+    pybind11_add_module(quila_core_py src/python/bindings/quila_bindings.cpp)
+    target_link_libraries(quila_core_py PRIVATE quila_core)
+    set_target_properties(quila_core_py PROPERTIES OUTPUT_NAME quila_core)
+endif()
 
 # Integration test
 add_executable(integration_test src/tests/integration_test.cu)
