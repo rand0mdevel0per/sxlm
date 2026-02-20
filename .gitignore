@@ -1,0 +1,46 @@
+# Build
+build/
+build*/
+cmake-build-*/
+bin/
+lib/
+out/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+_deps/
+
+# Compiled
+*.o
+*.obj
+*.so
+*.dll
+*.a
+*.lib
+*.exe
+*.ptx
+*.cubin
+*.fatbin
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.egg
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Data
+models/*.sxlm
+data/
+*.log
+*.tmp

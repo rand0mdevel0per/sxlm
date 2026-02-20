@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package quila;
+
+message NeuronState {
+  uint32 neuron_id = 1;
+  bytes s1_activation = 2;
+  bytes s2_computational = 3;
+  bytes s3_temporal = 4;
+  bytes s4_identity = 5;
+  bytes s5_confidence = 6;
+  bytes s6_connectivity = 7;
+  bytes s7_plasticity = 8;
+  bytes s8_utility = 9;
+}
+
+message KFEEntry {
+  uint64 kfe_id = 1;
+  bytes embedding = 2;
+  bytes state_snapshot = 3;
+  float utility = 4;
+  float confidence = 5;
+  uint32 access_count = 6;
+  int64 last_access_epoch = 7;
+  bool soft_delete_flag = 8;
+}
