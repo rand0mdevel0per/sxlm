@@ -4,6 +4,8 @@
   command = "npm run docs:build"
   publish = "docs/.vitepress/dist"
 
+pages_build_output_dir = "docs/.vitepress/dist"
+
 [build.environment]
   NODE_VERSION = "18"
 
