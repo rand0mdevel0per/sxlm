@@ -29,4 +29,9 @@ endif()
 set_target_properties(quila_core PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
     POSITION_INDEPENDENT_CODE ON
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
+
+# Integration test
+add_executable(integration_test src/tests/integration_test.cu)
+target_link_libraries(integration_test quila_core CUDA::cudart)

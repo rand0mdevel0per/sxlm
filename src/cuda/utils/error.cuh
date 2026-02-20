@@ -13,3 +13,5 @@
     } while(0)
 
 #define CUDA_CHECK_LAST() CUDA_CHECK(cudaGetLastError())
+
+#define CHECK_CUDA_ERROR(call) CUDA_CHECK(call)
