@@ -1,7 +1,9 @@
-# Build directories
+# Build
 build/
 build*/
 cmake-build-*/
+bin/
+lib/
 out/
 
 # CMake
@@ -9,20 +11,16 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 install_manifest.txt
-CTestTestfile.cmake
 _deps/
 
-# Compiled files
+# Compiled
 *.o
 *.obj
 *.so
 *.dll
-*.dylib
 *.a
 *.lib
 *.exe
-
-# CUDA
 *.ptx
 *.cubin
 *.fatbin
@@ -30,46 +28,19 @@ _deps/
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
+dist/
 *.egg
-
-# vcpkg
-vcpkg_installed/
+venv/
+env/
 
 # IDE
 .vscode/
 .idea/
 *.swp
-*.swo
-*~
-.DS_Store
 
-# Logs
+# Data
+models/*.sxlm
+data/
 *.log
-
-# Checkpoints and cache
-*.pb
-*.ckpt
-cache/
-checkpoints/
-
-# Temporary files
 *.tmp
-*.bak
-*.orig

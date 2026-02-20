@@ -1,0 +1,7 @@
+project_id   = "your-gcp-project-id"
+region       = "us-central1"
+zone         = "us-central1-a"
+environment  = "prod"
+machine_type = "a2-highgpu-1g"
+gpu_type     = "nvidia-tesla-a100"
+gpu_count    = 1

@@ -1,184 +1,37 @@
-cmake_minimum_required(VERSION 3.18)
-project(sxlm VERSION 0.2.0 LANGUAGES CXX CUDA)
+cmake_minimum_required(VERSION 3.20)
+project(Quila LANGUAGES CXX CUDA)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
-set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_ARCHITECTURES 80 86 89 90)
 
-# Find CUDA toolkit for imported targets
-find_package(CUDAToolkit REQUIRED)
+find_package(CUDAToolkit 12.0 REQUIRED)
+find_package(Protobuf 3.21)
 
-# Optional dependencies
-# Note: vcpkg uses lowercase package names
-find_package(protobuf CONFIG QUIET)
-if(NOT protobuf_FOUND)
-    find_package(Protobuf)
-endif()
-find_package(nlohmann_json 3.2.0)
-find_package(zstd)
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
-# Fetch nmdb as external dependency
-# Temporarily disabled for Phase 3 testing
-# include(FetchContent)
-# FetchContent_Declare(
-#     nmdb
-#     GIT_REPOSITORY https://github.com/rand0mdevel0per/nmdb.git
-#     GIT_TAG master
-# )
-# set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-# FetchContent_MakeAvailable(nmdb)
-
-# Add nmdb include directories
-# include_directories(${nmdb_SOURCE_DIR}/include)
-# include_directories(${nmdb_BINARY_DIR})
-
-# ONNX Runtime (for CLIP model inference)
-find_package(onnxruntime CONFIG)
-if(NOT onnxruntime_FOUND)
-    message(STATUS "ONNX Runtime not found, will use placeholder implementation")
-endif()
-
-# Protobuf generation (optional)
 if(Protobuf_FOUND)
-    set(PROTO_FILES
-        proto/neuron_config.proto
-        proto/model_state.proto
-        proto/embedding_config.proto
-    )
+    include_directories(${PROTOBUF_INCLUDE_DIRS})
+    file(GLOB PROTO_FILES src/cpp/proto/*.proto)
     protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
-    message(STATUS "Protobuf found, enabling serialization support")
-else()
-    set(PROTO_SRCS "")
-    set(PROTO_HDRS "")
-    message(WARNING "Protobuf not found, serialization support disabled")
 endif()
 
-# Include directories
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${PROTOBUF_INCLUDE_DIRS}
-)
+file(GLOB_RECURSE CUDA_SOURCES src/cuda/**/*.cu)
+file(GLOB_RECURSE CPP_SOURCES src/cpp/**/*.cpp)
 
-# Source files
-set(SINTELLIX_SOURCES
-    # Core neuron implementation
-    src/core/neuron.cu
-    src/core/neuron_model.cu
-    src/core/multi_gpu.cu
-    src/core/streaming_buffer.cu
-    src/core/config.cpp
-    src/core/toml_config.cpp
+add_library(quila_core SHARED ${CUDA_SOURCES} ${CPP_SOURCES} ${PROTO_SRCS})
 
-    # Storage
-    src/storage/tiered_storage.cu
-
-    # Codec files
-    src/codec/cic_data.cpp
-    src/codec/vqgan.cu
-    src/codec/encoder.cu
-    src/codec/decoder.cu
-
-    # CIC channel operations
-    # Temporarily disabled due to nmdb Windows compatibility issues
-    # src/cic_channel_ops.cpp
-    # src/model_cic_processor.cpp
-    src/embedding_config_loader.cpp
-
-    # Phase 3: QualiaTrace components
-    src/attention/hot_nsa.cu
-    src/memory/engram.cu
-    src/memory/sct.cu
-    src/training/el_trace.cu
-    src/training/mhc.cu
-    src/planning/ring_buffer.cu
-    src/multimodal/fusion.cu
-    src/tools/tool_port.cu
-
-    ${PROTO_SRCS}
-)
-
-set(SINTELLIX_HEADERS
-    include/sintellix/core/neuron.cuh
-    include/sintellix/core/neuron_model.cuh
-    include/sintellix/core/multi_gpu.cuh
-    include/sintellix/core/streaming_buffer.cuh
-    include/sintellix/core/config.hpp
-    include/sintellix/codec/cic_data.hpp
-    include/sintellix/codec/vqgan.hpp
-    include/sintellix/codec/encoder.hpp
-    include/sintellix/codec/decoder.hpp
-    include/sintellix/storage/tiered_storage.cuh
-    # Temporarily disabled due to nmdb Windows compatibility issues
-    # include/sintellix/cic_channel_ops.h
-    # include/sintellix/model_cic_processor.h
-    include/sintellix/embedding_config_loader.h
-)
-
-# Main library
-add_library(sintellix SHARED ${SINTELLIX_SOURCES} ${SINTELLIX_HEADERS})
-
-target_link_libraries(sintellix
-    CUDA::cudart
-    CUDA::cublas
-    # nmdb  # Temporarily disabled due to Windows compatibility issues
-)
-
-# Optional libraries
+target_link_libraries(quila_core CUDA::cudart CUDA::cublas)
 if(Protobuf_FOUND)
-    target_link_libraries(sintellix protobuf::libprotobuf)
-    target_compile_definitions(sintellix PRIVATE USE_PROTOBUF)
+    target_link_libraries(quila_core ${Protobuf_LIBRARIES})
 endif()
 
-if(nlohmann_json_FOUND)
-    target_link_libraries(sintellix nlohmann_json::nlohmann_json)
-    target_compile_definitions(sintellix PRIVATE USE_NLOHMANN_JSON)
-endif()
-
-if(zstd_FOUND)
-    target_link_libraries(sintellix zstd::libzstd_shared)
-    target_compile_definitions(sintellix PRIVATE USE_ZSTD)
-endif()
-
-if(onnxruntime_FOUND)
-    target_link_libraries(sintellix onnxruntime::onnxruntime)
-    target_compile_definitions(sintellix PRIVATE USE_ONNXRUNTIME)
-endif()
-
-# CUDA compilation flags
-set_target_properties(sintellix PROPERTIES
+set_target_properties(quila_core PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES "75;80;86;89"
+    POSITION_INDEPENDENT_CODE ON
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
-target_compile_options(sintellix PRIVATE
-    $<$<COMPILE_LANGUAGE:CUDA>:
-        --use_fast_math
-        --expt-relaxed-constexpr
-        -Xcompiler=-fPIC
-    >
-)
-
-# Installation
-install(TARGETS sintellix
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-)
-
-install(DIRECTORY include/sintellix
-    DESTINATION include
-)
-
-# Python bindings
-if(BUILD_PYTHON)
-    add_subdirectory(python)
-endif()
-
-# Tests
-if(BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(tests)
-endif()
+# Integration test
+add_executable(integration_test src/tests/integration_test.cu)
+target_link_libraries(integration_test quila_core CUDA::cudart)
