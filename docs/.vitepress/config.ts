@@ -3,7 +3,9 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'Quila',
   description: 'QualiaTrace Language Model - Novel Dynamic Graph Reasoning System',
+  head: [['link', { rel: 'icon', href: '/logo.svg' }]],
   themeConfig: {
+    logo: '/logo.svg',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/' },
