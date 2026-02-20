@@ -6,7 +6,7 @@
 namespace quila {
 
 // RWKV-style linear attention scan over neuron grid
-__device__ void linear_attention_scan(
+static __device__ void linear_attention_scan(
     const float* neuron_outputs,  // h_final from all neurons
     PortState* port,
     int num_neurons,

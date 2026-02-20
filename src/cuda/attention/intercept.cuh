@@ -6,7 +6,7 @@
 namespace quila {
 
 // Macro-level mHC intercept layer
-__device__ void intercept_layer(
+static __device__ void intercept_layer(
     const float* aggr,
     const float* out_nsa,
     const float* neuron_outputs,

@@ -5,7 +5,7 @@
 namespace quila {
 
 // Minimal Sinkhorn-Knopp normalization
-__device__ void sinkhorn_knopp(float* W, int n, int iters = 20) {
+static __device__ void sinkhorn_knopp(float* W, int n, int iters = 20) {
     for (int iter = 0; iter < iters; iter++) {
         // Row normalization
         for (int i = 0; i < n; i++) {
@@ -36,7 +36,7 @@ __device__ void sinkhorn_knopp(float* W, int n, int iters = 20) {
 }
 
 // mHC mixing
-__device__ void mhc_mix(
+static __device__ void mhc_mix(
     const float* out_a,
     const float* out_b,
     const float* out_c,

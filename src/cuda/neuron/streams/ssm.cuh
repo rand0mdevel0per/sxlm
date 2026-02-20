@@ -1,11 +1,11 @@
 #pragma once
 #include <cuda_runtime.h>
-#include "../utils/error.cuh"
+#include "../../utils/error.cuh"
 
 namespace quila {
 
 // Minimal SSM (Mamba-style) implementation
-__device__ void stream_b_ssm(
+static __device__ void stream_b_ssm(
     const float* h_input,
     const float* frame_memory,
     float* ssm_state,

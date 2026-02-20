@@ -1,10 +1,10 @@
 #pragma once
 #include <cuda_runtime.h>
 #include "port.cuh"
-#include "linear_scan.cu"
-#include "utility.cu"
-#include "nsa_macro.cu"
-#include "intercept.cu"
+#include "linear_scan.cuh"
+#include "utility.cuh"
+#include "nsa_macro.cuh"
+#include "intercept.cuh"
 
 namespace quila {
 

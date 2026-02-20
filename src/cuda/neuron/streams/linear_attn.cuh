@@ -1,11 +1,11 @@
 #pragma once
 #include <cuda_runtime.h>
-#include "../utils/error.cuh"
+#include "../../utils/error.cuh"
 
 namespace quila {
 
 // Minimal Linear Attention (RWKV-style) implementation
-__device__ void stream_c_linear_attn(
+static __device__ void stream_c_linear_attn(
     const float* h_input,
     float* wkv_state,
     float* output,

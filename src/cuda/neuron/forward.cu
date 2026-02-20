@@ -1,12 +1,12 @@
 #pragma once
 #include <cuda_runtime.h>
 #include "state.cuh"
-#include "streams/nsa.cu"
-#include "streams/ssm.cu"
-#include "streams/linear_attn.cu"
-#include "streams/drc.cu"
-#include "mhc.cu"
-#include "consistency_model.cu"
+#include "streams/nsa.cuh"
+#include "streams/ssm.cuh"
+#include "streams/linear_attn.cuh"
+#include "streams/drc.cuh"
+#include "mhc.cuh"
+#include "consistency_model.cuh"
 #include "../utils/error.cuh"
 
 namespace quila {

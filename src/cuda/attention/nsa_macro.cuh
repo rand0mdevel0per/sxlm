@@ -6,7 +6,7 @@
 namespace quila {
 
 // Macro-level NSA sparse attention over selected neurons
-__device__ void nsa_macro_attention(
+static __device__ void nsa_macro_attention(
     const float* port_state,
     const float* neuron_outputs,
     const int* nsa_mask,

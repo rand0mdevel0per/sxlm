@@ -5,7 +5,7 @@
 namespace quila {
 
 // Minimal Consistency Model denoising
-__device__ void consistency_model_denoise(
+static __device__ void consistency_model_denoise(
     const float* h_noisy,
     float confidence,
     float* output,

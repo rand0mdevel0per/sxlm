@@ -1,11 +1,11 @@
 #pragma once
 #include <cuda_runtime.h>
-#include "../utils/error.cuh"
+#include "../../utils/error.cuh"
 
 namespace quila {
 
 // Minimal NSA implementation
-__device__ void stream_a_nsa(
+static __device__ void stream_a_nsa(
     const float* h_input,
     const float* utility_scores,
     float* output,

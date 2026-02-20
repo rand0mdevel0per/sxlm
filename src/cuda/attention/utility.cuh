@@ -5,7 +5,7 @@
 namespace quila {
 
 // Compute utility scores for NSA masking
-__device__ void compute_utility(
+static __device__ void compute_utility(
     const float* wkv_weights,
     const float* session_el_trace,
     const float* persistent_el_trace,
@@ -24,7 +24,7 @@ __device__ void compute_utility(
 }
 
 // Select top-k neurons by utility
-__device__ void select_top_k(
+static __device__ void select_top_k(
     const float* utility_scores,
     int* nsa_mask,
     int num_neurons,

@@ -1,6 +1,6 @@
 #pragma once
 #include "state.cuh"
-#include "../utils/memory.cu"
+#include "../utils/memory.cuh"
 #include "../utils/error.cuh"
 
 namespace quila {

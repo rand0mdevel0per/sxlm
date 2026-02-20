@@ -1,11 +1,11 @@
 #pragma once
 #include <cuda_runtime.h>
-#include "../utils/error.cuh"
+#include "../../utils/error.cuh"
 
 namespace quila {
 
 // Minimal DRC (Dynamic Residual Correction) implementation
-__device__ void stream_d_drc(
+static __device__ void stream_d_drc(
     const float* h_input,
     float confidence,
     float* output,
