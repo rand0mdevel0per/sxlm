@@ -10,6 +10,7 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/' },
       { text: 'API', link: '/api/' },
+      { text: 'Spec', link: '/spec' },
       { text: 'GitHub', link: 'https://github.com/rand0mdevel0per/sxlm' }
     ],
     sidebar: [
