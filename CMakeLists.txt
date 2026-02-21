@@ -7,11 +7,13 @@ set(CMAKE_CUDA_ARCHITECTURES 80 86 89 90)
 
 find_package(CUDAToolkit 12.0 REQUIRED)
 find_package(Protobuf 3.21 REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
     ${Protobuf_INCLUDE_DIRS}
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 # Protobuf generation
@@ -35,6 +37,8 @@ target_link_libraries(quila_core
     CUDA::cublas
     CUDA::curand
     ${Protobuf_LIBRARIES}
+    OpenSSL::SSL
+    OpenSSL::Crypto
 )
 
 set_target_properties(quila_core PROPERTIES
