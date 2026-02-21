@@ -8,14 +8,15 @@
 #include "mhc.cuh"
 #include "consistency_model.cuh"
 #include "../utils/error.cuh"
+#include "../utils/fp8.cuh"
 
 namespace quila {
 
-// Minimal 12-step neuron forward pass
+// Minimal 12-step neuron forward pass (fp8 E4M3 messages per Req 5.3.2)
 __global__ void neuron_forward_kernel(
     NeuronState* states,
-    const float* input_messages,
-    float* output_messages,
+    const __nv_fp8_e4m3* input_messages_fp8,
+    __nv_fp8_e4m3* output_messages_fp8,
     int num_neurons,
     int hidden_dim
 ) {
@@ -35,9 +36,9 @@ __global__ void neuron_forward_kernel(
     float* h_mid = out_d + hidden_dim;
     float* h_clean = h_mid + hidden_dim;
 
-    // STEP 1: Input aggregation (simplified)
+    // STEP 1: Input aggregation (dequantize fp8 E4M3 per Req 5.3.2)
     if (tid < hidden_dim) {
-        h[tid] = input_messages[neuron_id * hidden_dim + tid];
+        h[tid] = fp8_e4m3_to_fp32(input_messages_fp8[neuron_id * hidden_dim + tid]);
     }
     __syncthreads();
 
@@ -95,9 +96,9 @@ __global__ void neuron_forward_kernel(
     }
     __syncthreads();
 
-    // STEP 12: Output routing
+    // STEP 12: Output routing (quantize to fp8 E4M3 per Req 5.3.2)
     if (tid < hidden_dim) {
-        output_messages[neuron_id * hidden_dim + tid] = h_clean[tid];
+        output_messages_fp8[neuron_id * hidden_dim + tid] = fp32_to_fp8_e4m3(h_clean[tid]);
     }
 }
 

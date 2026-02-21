@@ -1,5 +1,6 @@
 #pragma once
 #include <cuda_runtime.h>
+#include <cuda_fp8.h>
 
 namespace quila {
 
@@ -52,6 +53,8 @@ struct S6_Connectivity {
     int connection_count;
     int* routing_table;
     float* neighbour_summary;  // R^D
+    __nv_fp8_e4m3* outgoing_message_fp8;  // fp8 E4M3 encoded (Req 5.3.2)
+    __nv_fp8_e4m3* incoming_message_fp8;  // fp8 E4M3 encoded (Req 5.3.2)
 };
 
 // S7: Plasticity state
