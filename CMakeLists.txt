@@ -8,6 +8,7 @@ set(CMAKE_CUDA_ARCHITECTURES 80 86 89 90)
 find_package(CUDAToolkit 12.0 REQUIRED)
 find_package(Protobuf 3.21 REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(zstd REQUIRED)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/src
@@ -39,6 +40,7 @@ target_link_libraries(quila_core
     ${Protobuf_LIBRARIES}
     OpenSSL::SSL
     OpenSSL::Crypto
+    zstd::libzstd_shared
 )
 
 set_target_properties(quila_core PROPERTIES

@@ -2,6 +2,7 @@
 #include "../utils/sha256.h"
 #include <fstream>
 #include <sstream>
+#include <zstd.h>
 
 namespace quila {
 
@@ -9,15 +10,27 @@ bool save_sxlm(const char* path, const SXLMFormat& model) {
     std::ofstream file(path, std::ios::binary);
     if (!file) return false;
 
-    // Write model data
+    // Write model metadata
     std::stringstream buffer;
     buffer.write(reinterpret_cast<const char*>(&model.version), sizeof(int));
     buffer.write(reinterpret_cast<const char*>(&model.num_neurons), sizeof(int));
     buffer.write(reinterpret_cast<const char*>(&model.hidden_dim), sizeof(int));
 
+    // Compress neuron weights with zstd level 3 (Req 21.4.1)
     size_t size = model.neuron_weights.size();
+    size_t src_size = size * sizeof(float);
+    size_t compressed_bound = ZSTD_compressBound(src_size);
+    std::vector<char> compressed(compressed_bound);
+
+    size_t compressed_size = ZSTD_compress(
+        compressed.data(), compressed_bound,
+        model.neuron_weights.data(), src_size,
+        3  // zstd level 3
+    );
+
     buffer.write(reinterpret_cast<const char*>(&size), sizeof(size));
-    buffer.write(reinterpret_cast<const char*>(model.neuron_weights.data()), size * sizeof(float));
+    buffer.write(reinterpret_cast<const char*>(&compressed_size), sizeof(size_t));
+    buffer.write(compressed.data(), compressed_size);
 
     // Compute SHA-256 hash (Req 21.4.2)
     std::string data = buffer.str();
@@ -53,17 +66,26 @@ bool load_sxlm(const char* path, SXLMFormat& model) {
         return false;
     }
 
-    // Parse model data
+    // Parse model metadata
     std::stringstream buffer;
     buffer.write(data.data(), data_size);
     buffer.read(reinterpret_cast<char*>(&model.version), sizeof(int));
     buffer.read(reinterpret_cast<char*>(&model.num_neurons), sizeof(int));
     buffer.read(reinterpret_cast<char*>(&model.hidden_dim), sizeof(int));
 
-    size_t size;
+    // Decompress neuron weights with zstd (Req 21.4.1)
+    size_t size, compressed_size;
     buffer.read(reinterpret_cast<char*>(&size), sizeof(size));
+    buffer.read(reinterpret_cast<char*>(&compressed_size), sizeof(size_t));
+
+    std::vector<char> compressed(compressed_size);
+    buffer.read(compressed.data(), compressed_size);
+
     model.neuron_weights.resize(size);
-    buffer.read(reinterpret_cast<char*>(model.neuron_weights.data()), size * sizeof(float));
+    ZSTD_decompress(
+        model.neuron_weights.data(), size * sizeof(float),
+        compressed.data(), compressed_size
+    );
 
     return true;
 }
