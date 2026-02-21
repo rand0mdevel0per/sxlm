@@ -26,6 +26,7 @@ __host__ void nccl_recv(NCCLComm* comm, void* data, size_t size, int src_gpu) {
 
 __host__ void nccl_allreduce(NCCLComm* comm, const void* sendbuf, void* recvbuf, size_t count) {
     // Simplified: just copy
+    // TODO: When implementing, use fp32 accumulation for all reductions (Req 5.3.1)
     cudaMemcpy(recvbuf, sendbuf, count, cudaMemcpyDeviceToDevice);
     (void)comm;
 }

@@ -15,6 +15,7 @@ __global__ void phase3_reread_kernel(
     if (tid >= hidden_dim) return;
 
     // Compute need_vector from demand and KFE library
+    // Use fp32 accumulation for all reductions (Req 5.3.1)
     float sum = 0.0f;
     for (int i = 0; i < num_kfe; i++) {
         sum += demand_vector[tid] * kfe_embeddings[i * hidden_dim + tid];
