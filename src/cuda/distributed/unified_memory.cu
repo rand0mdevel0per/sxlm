@@ -1,4 +1,5 @@
 #include "unified_memory.cuh"
+#include "mem_advise.cuh"
 #include "../utils/error.cuh"
 
 namespace quila {
@@ -27,8 +28,13 @@ __host__ void prefetch_to_gpu(void* ptr, size_t size, int device_id) {
 }
 
 __host__ void set_read_mostly_advice(void* ptr, size_t size, int device_id) {
-    // Disabled due to API changes
-    (void)ptr; (void)size; (void)device_id;
+    advise_read_mostly(ptr, size);
+    advise_preferred_location(ptr, size, device_id);
+}
+
+__host__ void set_hot_parameter_hints(void* ptr, size_t size, int device_id) {
+    // Set memory advise hints for hot parameters (Req 22.1.2)
+    CHECK_CUDA_ERROR(advise_hot_parameters(ptr, size, device_id));
 }
 
 } // namespace quila

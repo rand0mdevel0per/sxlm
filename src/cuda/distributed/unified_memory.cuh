@@ -26,4 +26,7 @@ __host__ void prefetch_to_gpu(void* ptr, size_t size, int device_id);
 // Set memory advice for hot parameters
 __host__ void set_read_mostly_advice(void* ptr, size_t size, int device_id);
 
+// Set cudaMemAdvise hints for hot parameters (Req 22.1.2)
+__host__ void set_hot_parameter_hints(void* ptr, size_t size, int device_id);
+
 } // namespace quila
